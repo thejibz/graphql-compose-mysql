@@ -1,0 +1,6 @@
+{
+    "typescript.tsdk": "/usr/lib/node_modules/typescript/lib",
+    "javascript.validate.enable": false,
+    "prettier.semi": false,
+    "files.autoSave": "onFocusChange"
+}

@@ -1,30 +1,16 @@
 {
-  "name": "graphql-compose-boilerplate",
+  "name": "graphql-compose-mysql",
   "version": "0.0.1",
-  "description": "Graphql-compose boilerplate",
-  "main": "lib/index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/graphql-compose/graphql-compose-boilerplate.git"
-  },
+  "description": "Graphql-compose for MySQL",
+  "main": "src/index.mjs",
   "keywords": [
     "graphql",
-    "graphql-compose"
+    "graphql-compose",
+    "graphql-compose-mysql"
   ],
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/graphql-compose/graphql-compose-boilerplate/issues"
-  },
-  "homepage": "https://github.com/graphql-compose/graphql-compose-boilerplate",
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-eslint": "^8.2.3",
-    "babel-jest": "^22.4.3",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-flow-strip-types": "^6.22.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.6.1",
+    "babel-eslint": "^10.0.1",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-config-prettier": "^2.9.0",
@@ -38,11 +24,12 @@
     "rimraf": "^2.6.2"
   },
   "dependencies": {
-    "babel-runtime": "^6.26.0",
     "express": "^4.16.3",
     "express-graphql": "^0.6.12",
     "graphql-compose": "^4.2.0",
     "lodash": "^4.17.10",
+    "mysql": "^2.16.0",
+    "mysql-utilities": "^1.0.13",
     "nodemon": "^1.17.3"
   },
   "config": {
@@ -56,8 +43,8 @@
     ]
   },
   "scripts": {
-    "start": "babel-node ./src/index.js",
-    "dev": "nodemon ./src/index.js --exec babel-node",
+    "start": "node --experimental-modules ./src/index.js",
+    "dev": "nodemon --experimental-modules ./src/index.mjs",
     "lint": "eslint --ext .js ./src",
     "flow": "./node_modules/.bin/flow",
     "test": "npm run coverage && npm run lint && npm run flow"
