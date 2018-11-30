@@ -1,27 +1,31 @@
 /* @flow */
 
-import { TypeComposer } from "graphql-compose"
+import graphqlcompose from "graphql-compose"
 import mysqlUtilities from "mysql-utilities"
 
-import { convertToSourceTC } from "./converter.mjs"
+import { convertToSourceTC } from "./mapper.mjs"
 
-import type { composeWithMysqlOptsT } from "./types.mjs"
+const { TypeComposer } = graphqlcompose
+
+type composeWithMysqlOptsT = {
+    graphqlTypeName: string,
+    mysqlClient: Object,
+    mysqlTable: string,
+    prefix?: ?string,
+    postfix?: ?string,
+}
 
 export function composeWithMysql(opts: composeWithMysqlOptsT): TypeComposer {
     if (!opts) {
         throw new Error("Opts is required argument for composeWithElastic()")
     }
 
-    if (typeof opts.graphqlTypeName !== "string" || !opts.graphqlTypeName) {
+    if (!opts.graphqlTypeName || typeof opts.graphqlTypeName !== "string") {
         throw new Error("Opts.graphqlTypeName is required property for generated GraphQL Type name in composeWithMysql()")
     }
 
     if (!opts.mysqlClient) {
         throw new Error("You must provide a mysqlClient connected to the database.")
-    }
-
-    if (!opts.mysqlSchema) {
-        throw new Error("You must provide the mysqlSchema containing your tables.")
     }
 
     if (!opts.mysqlTable) {

@@ -2,7 +2,12 @@
   "name": "graphql-compose-mysql",
   "version": "0.0.1",
   "description": "Graphql-compose for MySQL",
-  "main": "src/index.mjs",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.mjs",
+  "module": "src/index.mjs",
   "keywords": [
     "graphql",
     "graphql-compose",
@@ -18,8 +23,12 @@
     "eslint-plugin-import": "^2.11.0",
     "eslint-plugin-prettier": "^2.6.0",
     "flow-bin": "0.70.0",
+    "flow-node": "^1.2.3",
+    "flow-remove-types": "^1.2.3",
+    "flow-typed": "^2.5.1",
     "graphql": "^0.13.2",
     "jest": "^22.4.3",
+    "nodemon": "^1.17.3",
     "prettier": "^1.12.1",
     "rimraf": "^2.6.2"
   },
@@ -29,8 +38,7 @@
     "graphql-compose": "^4.2.0",
     "lodash": "^4.17.10",
     "mysql": "^2.16.0",
-    "mysql-utilities": "^1.0.13",
-    "nodemon": "^1.17.3"
+    "mysql-utilities": "^1.0.13"
   },
   "config": {
     "commitizen": {
@@ -43,9 +51,12 @@
     ]
   },
   "scripts": {
-    "start": "node --experimental-modules ./src/index.js",
-    "dev": "nodemon --experimental-modules ./src/index.mjs",
-    "lint": "eslint --ext .js ./src",
+    "flow:build": "flow-remove-types ./src/ -d ./lib --all --pretty",
+    "flow:deps": "flow-typed install",
+    "build": "nodemon --watch src --exec \"yarn flow:build\"",
+    "start": "node --experimental-modules ./lib/index.mjs",
+    "dev": "nodemon --experimental-modules --watch lib ./lib/index.mjs",
+    "lint": "eslint --ext .mjs ./src",
     "flow": "./node_modules/.bin/flow",
     "test": "npm run coverage && npm run lint && npm run flow"
   }

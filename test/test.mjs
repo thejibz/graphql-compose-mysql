@@ -1,5 +1,6 @@
 import mysql from "mysql"
 import mysqlUtilities from "mysql-utilities"
+import { composeWithMysql } from "../src/composeWithMysql.mjs"
 
 const connection = mysql.createConnection({
     host: "localhost",
@@ -10,20 +11,26 @@ const connection = mysql.createConnection({
 
 connection.connect()
 
-// Mix-in for Data Access Methods and SQL Autogenerating Methods
-mysqlUtilities.upgrade(connection)
+composeWithMysql({
+    graphqlTypeName: "employees",
+    mysqlClient: connection,
+    mysqlTable: "employees",
+})
 
-// Mix-in for Introspection Methods
-mysqlUtilities.introspection(connection)
+// Mix-in for Data Access Methods and SQL Autogenerating Methods
+// mysqlUtilities.upgrade(connection)
+
+// // Mix-in for Introspection Methods
+// mysqlUtilities.introspection(connection)
 
 // Do something using utilities
-connection.queryRow("SELECT * FROM employees where first_name=?", ["Mary"], (err, row) => {
-    console.dir({ queryRow: row })
-})
+// connection.queryRow("SELECT * FROM employees where first_name=?", ["Mary"], (err, row) => {
+//     console.dir({ queryRow: row })
+// })
 
-connection.fields("employees", (err, data) => {
-    console.dir({ fields: data })
-})
+// connection.fields("employees", (err, data) => {
+//     console.dir({ fields: data })
+// })
 
 // Release connection
 connection.end()

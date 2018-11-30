@@ -2,5 +2,7 @@
     "typescript.tsdk": "/usr/lib/node_modules/typescript/lib",
     "javascript.validate.enable": false,
     "prettier.semi": false,
-    "files.autoSave": "onFocusChange"
+    "files.autoSave": "onFocusChange",
+    "flow.pathToFlow": "${workspaceRoot}\\\\node_modules\\\\.bin\\\\flow",
+    "prettier.eslintIntegration": true
 }

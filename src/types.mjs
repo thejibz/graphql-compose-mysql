@@ -1,10 +1,8 @@
 /* @flow */
 
-export type 
 export type composeWithMysqlOptsT = {
     graphqlTypeName: string,
     mysqlClient: Object,
-    mysqlSchema: Object,
     mysqlTable: string,
     prefix?: ?string,
     postfix?: ?string,

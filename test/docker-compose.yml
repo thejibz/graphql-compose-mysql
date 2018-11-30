@@ -9,6 +9,7 @@ services:
     - "3306:3306"
     volumes:
       - mysql:/var/lib/mysql
+      - ./data/test_db:/tmp/test_db
 
   adminer:
     image: adminer

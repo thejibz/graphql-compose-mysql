@@ -1,26 +1,38 @@
 /* @flow */
-/* eslint-disable no-unused-vars */
 
-import express from "express"
-import graphqlHTTP from "express-graphql"
-import { schema } from "./schema"
+import mysql from "mysql"
+// import mysqlUtilities from "mysql-utilities"
+import { composeWithMysql } from "./composeWithMysql.mjs"
 
-const PORT = 4000
-const app = express()
-
-app.use(
-    "/graphql",
-    graphqlHTTP(async (request, response, graphQLParams) => {
-        return {
-            schema,
-            graphiql: true,
-            context: {
-                req: request,
-            },
-        }
-    })
-)
-
-app.listen(PORT, () => {
-    console.log(`The server is running at http://localhost:${PORT}/graphql`)
+const connection = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "secret",
+    database: "employees",
 })
+
+connection.connect()
+
+composeWithMysql({
+    graphqlTypeName: "employees",
+    mysqlClient: connection,
+    mysqlTable: "employees",
+})
+
+// Mix-in for Data Access Methods and SQL Autogenerating Methods
+// mysqlUtilities.upgrade(connection)
+
+// // Mix-in for Introspection Methods
+// mysqlUtilities.introspection(connection)
+
+// Do something using utilities
+// connection.queryRow("SELECT * FROM employees where first_name=?", ["Mary"], (err, row) => {
+//     console.dir({ queryRow: row })
+// })
+
+// connection.fields("employees", (err, data) => {
+//     console.dir({ fields: data })
+// })
+
+// Release connection
+connection.end()
