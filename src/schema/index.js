@@ -1,7 +1,5 @@
-/* @flow */
-
-import { TypeComposer, schemaComposer } from "graphql-compose"
-import { find, filter } from "lodash"
+const { TypeComposer, schemaComposer } = require("graphql-compose")
+const { find, filter } = require("lodash")
 
 // -----------------------------------------------------------------------------
 // #1. Example data
@@ -110,4 +108,4 @@ schemaComposer.Mutation.addFields({
 })
 
 // And now buildSchema which will be passed to express-graphql or apollo-server
-export const schema = schemaComposer.buildSchema()
+//export const schema = schemaComposer.buildSchema()

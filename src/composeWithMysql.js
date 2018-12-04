@@ -1,17 +1,8 @@
-const { TypeComposer } = require("graphql-compose")
 const mysqlUtilities = require("mysql-utilities")
 
-const { convertToSourceTC } = require("./mapper.mjs")
+const { convertToSourceTC } = require("./mapper")
 
-type composeWithMysqlOptsT = {
-    graphqlTypeName: string,
-    mysqlClient: Object,
-    mysqlTable: string,
-    prefix?: ?string,
-    postfix?: ?string,
-}
-
-exports.default = async function composeWithMysql(opts: composeWithMysqlOptsT): Promise<TypeComposer> {
+module.exports = async function composeWithMysql(opts) {
     if (!opts) {
         throw new Error("Opts is required argument for composeWithElastic()")
     }

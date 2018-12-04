@@ -1,52 +1,18 @@
 {
-    "extends": ["airbnb-base", "prettier"],
-    "parser": "babel-eslint",
-    "rules": {
-        "no-underscore-dangle": 0,
-        "arrow-body-style": 0,
-        "no-unused-expressions": 0,
-        "no-plusplus": 0,
-        "import/no-extraneous-dependencies": ["error", { "devDependencies": ["**/*-test.js"] }],
-        "no-prototype-builtins": 0,
-        "no-restricted-syntax": 0,
-        "no-mixed-operators": 0,
-        "indent": ["error", 4],
-        "semi": ["error", "never"],
-        "comma-dangle": [
-            "error",
-            {
-                "arrays": "always-multiline",
-                "objects": "always-multiline",
-                "imports": "always-multiline",
-                "exports": "always-multiline",
-                "functions": "ignore"
-            }
-        ],
-        "prettier/prettier": [
-            "error",
-            {
-                "printWidth": 150,
-                "singleQuote": false,
-                "trailingComma": "es5",
-                "tabWidth": 4,
-                "semi": false
-            }
-        ],
-        "import/prefer-default-export": 0,
-        "arrow-parens": 0,
-        "no-use-before-define": ["error", { "functions": false }],
-        "prefer-destructuring": 0
-    },
-    "env": {
-        "jasmine": true,
-        "jest": true
-    },
-    "plugins": ["flowtype", "prettier"],
-    "globals": {
-        "Class": true,
-        "Iterator": true,
-        "$Shape": true,
-        "$FlowFixMe": true,
-        "$ReadOnlyArray": true
-    }
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-console": 0,
+    "indent": 2,
+    "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
+    "quotes": [2, "double"],
+    "linebreak-style": [2, "unix"],
+    "semi": [0, "always"]
+  },
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "extends": "eslint:recommended"
 }

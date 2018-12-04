@@ -1,6 +1,5 @@
-import mysql from "mysql"
-import mysqlUtilities from "mysql-utilities"
-import { composeWithMysql } from "../src/composeWithMysql.mjs"
+const mysql = require("mysql")
+const { composeWithMysql } = require("../src/composeWithMysql.mjs")
 
 const connection = mysql.createConnection({
     host: "localhost",

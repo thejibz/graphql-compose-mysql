@@ -1,7 +1,7 @@
-import schemaComposer from "graphql-compose"
-import mysql from "mysql"
-import ApolloServer from "apollo-server"
-import composeWithMysql  from "./composeWithMysql.mjs"
+const { schemaComposer } = require("graphql-compose")
+const mysql = require("mysql")
+const { ApolloServer } = require("apollo-server")
+const composeWithMysql = require("./composeWithMysql")
 
 /* For introspection
 query {
@@ -17,6 +17,7 @@ query {
 */
 
 async function main() {
+    
     const connection = mysql.createConnection({
         host: "localhost",
         port: 3306,

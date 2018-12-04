@@ -1,5 +1,4 @@
-import { TypeComposer, ComposeFieldConfig } from "graphql-compose"
-import type { mysqlTableT, composeWithMysqlOptsT } from "./types.mjs"
+const { TypeComposer } = require("graphql-compose")
 
 const typeMap = {
     int: "Int",
@@ -8,12 +7,12 @@ const typeMap = {
     enum: "String", // TODO: Use GraphQL Enum type
 }
 
-exports.convertToSourceTC = async (opts: composeWithMysqlOptsT = {}): Promise<TypeComposer> => {
+exports.convertToSourceTC = async (opts = {}) => {
     const tc = TypeComposer.create({
         name: `${opts.prefix || ""}${opts.graphqlTypeName}${opts.postfix || ""}`,
     })
 
-    const fieldsMap: mysqlTableT = await retrieveTableFields(opts.mysqlClient, opts.mysqlTable)
+    const fieldsMap = await retrieveTableFields(opts.mysqlClient, opts.mysqlTable)
 
     const fields = {}
     Object.keys(fieldsMap).forEach(field => {
@@ -21,8 +20,9 @@ exports.convertToSourceTC = async (opts: composeWithMysqlOptsT = {}): Promise<Ty
 
         fields[fieldName] = mysqlTypeToGraphQLType(fieldsMap[field].Type)
     })
-    console.log(fields)
-    tc.setFields(fields)
+    console.log(tc)
+    
+    tc.addFields(fields)
 
     return tc
 }
@@ -39,7 +39,7 @@ function retrieveTableFields(mysqlClient, tableName) {
     })
 }
 
-function mysqlTypeToGraphQLType(mysqlType: string): ComposeFieldConfig<any, any> {
+function mysqlTypeToGraphQLType(mysqlType) {
     const extractBaseType = RegExp("^(\\w+)\\W*", "g")
     const baseType = extractBaseType.exec(mysqlType)[1]
 

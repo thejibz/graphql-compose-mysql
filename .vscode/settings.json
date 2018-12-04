@@ -1,8 +1,8 @@
 {
-    "typescript.tsdk": "/usr/lib/node_modules/typescript/lib",
-    "javascript.validate.enable": false,
+    "javascript.validate.enable": true,
     "prettier.semi": false,
     "files.autoSave": "onFocusChange",
-    "flow.pathToFlow": "${workspaceRoot}\\\\node_modules\\\\.bin\\\\flow",
-    "prettier.eslintIntegration": true
+    "prettier.eslintIntegration": true,
+    "eslint.alwaysShowStatus": true,
+    "eslint.packageManager": "yarn"
 }

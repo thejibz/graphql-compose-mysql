@@ -17,7 +17,7 @@
   "dependencies": {
     "apollo-server": "^2.2.5",
     "graphql": "^14.0.2",
-    "graphql-compose": "^4.2.0",
+    "graphql-compose": "^5.3.4",
     "lodash": "^4.17.10",
     "mysql": "^2.16.0",
     "mysql-utilities": "^1.0.13"

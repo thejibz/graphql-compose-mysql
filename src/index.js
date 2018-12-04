@@ -1,2 +1,2 @@
-exports.composeWithMysql = require("./composeWithMysql.mjs").composeWithMysql
+exports.composeWithMysql = require("./composeWithMysql").composeWithMysql
 
