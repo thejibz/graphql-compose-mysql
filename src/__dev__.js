@@ -1,23 +1,10 @@
-const { schemaComposer } = require("graphql-compose")
 const mysql = require("mysql")
 const { ApolloServer } = require("apollo-server")
-const composeWithMysql = require("./composeWithMysql")
+const exitHook = require('exit-hook')
+const { composeWithMysql } = require("./composeWithMysql")()
 
-/* For introspection
-query {
-  __schema {
-    types {
-      name
-      fields {
-        name
-      }
-    }
-  }
-}
-*/
 
 async function main() {
-    
     const connection = mysql.createConnection({
         host: "localhost",
         port: 3306,
@@ -29,30 +16,32 @@ async function main() {
     // open connection
     connection.connect()
 
-    const gqlType = await composeWithMysql({
-        graphqlTypeName: "employees",
+    const employeesSchema = await composeWithMysql({
+        graphqlTypeName: "employeeT",
         mysqlClient: connection,
         mysqlTable: "employees",
     })
 
-    // Release connection
-    connection.end()
-
-    schemaComposer.Query.addFields({
-        employees: {
-            type: gqlType,
-            resolve: () => "fake",
-        },
+    const departmentsSchema = await composeWithMysql({
+        graphqlTypeName: "departmentsT",
+        mysqlClient: connection,
+        mysqlTable: "departments",
     })
 
     const server = new ApolloServer({
-        schema: schemaComposer.buildSchema(),
+        schema: departmentsSchema,
         playground: true,
     })
 
     server.listen().then(({ url }) => {
         console.log(`🚀 Server ready at ${url}`)
     })
+
+    exitHook(() => {
+        console.log('Exiting');
+        // release connection
+        connection.end()
+    });
 }
 
 main()

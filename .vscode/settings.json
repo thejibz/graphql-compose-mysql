@@ -1,8 +1,8 @@
 {
-    "javascript.validate.enable": true,
-    "prettier.semi": false,
-    "files.autoSave": "onFocusChange",
-    "prettier.eslintIntegration": true,
-    "eslint.alwaysShowStatus": true,
-    "eslint.packageManager": "yarn"
+  "files.autoSave": "onFocusChange",
+  "prettier.printWidth": 120,
+  "prettier.tabWidth": 4,
+  "prettier.useTabs": true,
+  "prettier.endOfLine": "lf",
+  "prettier.semi": false
 }
