@@ -1,11 +1,7 @@
-/* @flow */
+const { TypeComposer } = require("graphql-compose")
+const mysqlUtilities = require("mysql-utilities")
 
-import graphqlcompose from "graphql-compose"
-import mysqlUtilities from "mysql-utilities"
-
-import { convertToSourceTC } from "./mapper.mjs"
-
-const { TypeComposer } = graphqlcompose
+const { convertToSourceTC } = require("./mapper.mjs")
 
 type composeWithMysqlOptsT = {
     graphqlTypeName: string,
@@ -15,7 +11,7 @@ type composeWithMysqlOptsT = {
     postfix?: ?string,
 }
 
-export function composeWithMysql(opts: composeWithMysqlOptsT): TypeComposer {
+exports.default = async function composeWithMysql(opts: composeWithMysqlOptsT): Promise<TypeComposer> {
     if (!opts) {
         throw new Error("Opts is required argument for composeWithElastic()")
     }
@@ -38,7 +34,6 @@ export function composeWithMysql(opts: composeWithMysqlOptsT): TypeComposer {
 
     // Mix-in for Data Access Methods and SQL Autogenerating Methods
     mysqlUtilities.upgrade(opts.mysqlClient)
-
     // Mix-in for Introspection Methods
     mysqlUtilities.introspection(opts.mysqlClient)
 
@@ -57,12 +52,5 @@ export function composeWithMysql(opts: composeWithMysqlOptsT): TypeComposer {
     // sourceTC.addResolver(findByIdR);
     // sourceTC.addResolver(updateByIdR);
 
-    return TypeComposer.create({
-        name: "Author",
-        fields: {
-            id: "Int!",
-            firstName: "String",
-            lastName: "String",
-        },
-    })
+    return sourceTC
 }

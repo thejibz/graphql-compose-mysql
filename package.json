@@ -2,12 +2,7 @@
   "name": "graphql-compose-mysql",
   "version": "0.0.1",
   "description": "Graphql-compose for MySQL",
-  "files": [
-    "lib",
-    "src"
-  ],
-  "main": "lib/index.mjs",
-  "module": "src/index.mjs",
+  "main": "src/index.js",
   "keywords": [
     "graphql",
     "graphql-compose",
@@ -15,35 +10,17 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "babel-eslint": "^10.0.1",
     "eslint": "^4.19.1",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-flowtype": "^2.46.3",
-    "eslint-plugin-import": "^2.11.0",
-    "eslint-plugin-prettier": "^2.6.0",
-    "flow-bin": "0.70.0",
-    "flow-node": "^1.2.3",
-    "flow-remove-types": "^1.2.3",
-    "flow-typed": "^2.5.1",
-    "graphql": "^0.13.2",
     "jest": "^22.4.3",
-    "nodemon": "^1.17.3",
-    "prettier": "^1.12.1",
-    "rimraf": "^2.6.2"
+    "nodemon": "^1.17.3"
   },
   "dependencies": {
-    "express": "^4.16.3",
-    "express-graphql": "^0.6.12",
+    "apollo-server": "^2.2.5",
+    "graphql": "^14.0.2",
     "graphql-compose": "^4.2.0",
     "lodash": "^4.17.10",
     "mysql": "^2.16.0",
     "mysql-utilities": "^1.0.13"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   },
   "jest": {
     "roots": [
@@ -51,13 +28,8 @@
     ]
   },
   "scripts": {
-    "flow:build": "flow-remove-types ./src/ -d ./lib --all --pretty",
-    "flow:deps": "flow-typed install",
-    "build": "nodemon --watch src --exec \"yarn flow:build\"",
-    "start": "node --experimental-modules ./lib/index.mjs",
-    "dev": "nodemon --experimental-modules --watch lib ./lib/index.mjs",
-    "lint": "eslint --ext .mjs ./src",
-    "flow": "./node_modules/.bin/flow",
-    "test": "npm run coverage && npm run lint && npm run flow"
+    "dev:start": "nodemon ./src/__dev__.js",
+    "start": "node ./src/index.js",
+    "lint": "eslint ./src"
   }
 }
