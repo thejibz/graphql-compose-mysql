@@ -1,8 +1,7 @@
 const mysqlUtilities = require("mysql-utilities")
 const { TypeComposer, SchemaComposer, getFlatProjectionFromAST, clearName } = require("graphql-compose")
 
-module.exports = (() => {
-
+module.exports = ( () => {
     const typeMap = { // TODO: Add spatial type ???
         bigint: "Int",
         binary: "String",
@@ -19,9 +18,9 @@ module.exports = (() => {
         dec: "Float",
         decimal: "Float",
         double: "Float",
-        
+
         enum: "String", // TODO: Use GraphQL Enum type !
-        
+
         float: "Float",
 
         int: "Int",
@@ -37,17 +36,17 @@ module.exports = (() => {
         mediumtext: "String",
 
         numeric: "Float",
-        
+
         set: "String", // TODO: Use GraphQL Enum/Union type ???
         smallint: "Int",
-        
+
         text: "String",
         time: "Date",
         timestamp: "Date",
         tinyblob: "String",
         tinyint: "Int",
         tinytext: "String",
-        
+
         varbinary: "String",
         varchar: "String",
 
@@ -57,7 +56,7 @@ module.exports = (() => {
     const retrieveTableFields = (mysqlClient, mysqlTable) => {
         return new Promise((resolve, reject) => {
             mysqlClient.fields(
-                mysqlTable, 
+                mysqlTable,
                 (err, fields) => !!err ? reject(err) : resolve(fields)
             )
         })
@@ -157,8 +156,10 @@ module.exports = (() => {
             const gqlSchema = schemaComposer.buildSchema()
 
             return gqlSchema
+
         }
     }
-})
+})()
+
 
 

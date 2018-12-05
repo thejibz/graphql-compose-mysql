@@ -1,2 +1,1 @@
-exports.composeWithMysql = require("./composeWithMysql").composeWithMysql
-
+module.exports = require("./composeWithMysql")
