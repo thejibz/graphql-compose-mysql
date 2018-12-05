@@ -1,7 +1,8 @@
 {
   "name": "graphql-compose-mysql",
   "version": "0.0.1",
-  "description": "Graphql-compose for MySQL",
+  "author": "Jean-Baptiste Roux",
+  "description": "graphql-compose for MySQL",
   "main": "src/index.js",
   "keywords": [
     "graphql",
@@ -10,12 +11,12 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "jest": "^22.4.3",
-    "nodemon": "^1.17.3"
+    "jest": "^23.6.0",
+    "nodemon": "^1.17.3",
+    "exit-hook": "^2.0.0"
   },
   "dependencies": {
     "apollo-server": "^2.2.5",
-    "exit-hook": "^2.0.0",
     "graphql": "^14.0.2",
     "graphql-compose": "^5.3.4",
     "lodash": "^4.17.10",
@@ -24,11 +25,13 @@
   },
   "jest": {
     "roots": [
-      "<rootDir>/src"
-    ]
+      "<rootDir>/tests/"
+    ],
+    "testEnvironment": "node"
   },
   "scripts": {
-    "dev:start": "nodemon ./src/__dev__.js",
+    "test": "jest",
+    "dev": "nodemon ./src/__dev__.js",
     "start": "node ./src/index.js",
     "lint": "eslint ./src"
   }

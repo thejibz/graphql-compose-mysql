@@ -19,17 +19,11 @@ async function main() {
     const employeesSchema = await composeWithMysql({
         graphqlTypeName: "employeeT",
         mysqlClient: connection,
-        mysqlTable: "employees",
-    })
-
-    const departmentsSchema = await composeWithMysql({
-        graphqlTypeName: "departmentsT",
-        mysqlClient: connection,
-        mysqlTable: "departments",
+        mysqlTableName: "employees",
     })
 
     const server = new ApolloServer({
-        schema: departmentsSchema,
+        schema: employeesSchema,
         playground: true,
     })
 

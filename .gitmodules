@@ -1,0 +1,3 @@
+[submodule "tests/data/test_db"]
+	path = tests/data/test_db
+	url = https://github.com/datacharmer/test_db.git
