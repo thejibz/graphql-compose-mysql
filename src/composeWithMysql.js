@@ -1,7 +1,8 @@
+const mysql = require("mysql")
 const mysqlUtilities = require("mysql-utilities")
 const { TypeComposer, SchemaComposer, getFlatProjectionFromAST, clearName } = require("graphql-compose")
 
-module.exports = ( () => {
+module.exports = (() => {
     const typeMap = { // TODO: Add spatial type ???
         bigint: "Int",
         binary: "String",
@@ -53,16 +54,25 @@ module.exports = ( () => {
         year: "Int",
     }
 
-    const retrieveTableFields = (mysqlClient, mysqlTable) => {
+    const _retrieveTableFields = (mysqlConfig, mysqlTableName) => {
         return new Promise((resolve, reject) => {
-            mysqlClient.fields(
-                mysqlTable,
+            const mysqlConnection = mysql.createConnection(mysqlConfig)
+
+            // Mix-in for Data Access Methods and SQL Autogenerating Methods
+            mysqlUtilities.upgrade(mysqlConnection)
+            // Mix-in for Introspection Methods
+            mysqlUtilities.introspection(mysqlConnection)
+
+            mysqlConnection.fields(
+                mysqlTableName,
                 (err, fields) => !!err ? reject(err) : resolve(fields)
             )
+
+            mysqlConnection.end()
         })
     }
 
-    const mysqlTypeToGraphQLType = (mysqlType) => {
+    const _mysqlTypeToGraphQLType = (mysqlType) => {
         const extractBaseType = RegExp("^(\\w+)\\W*", "g")
         const baseType = extractBaseType.exec(mysqlType)[1]
 
@@ -75,38 +85,48 @@ module.exports = ( () => {
         return gqlType
     }
 
-    const buildGqlFieldsFromMysqlTable = async (mysqlClient, mysqlTableName) => {
-        const fieldsMap = await retrieveTableFields(mysqlClient, mysqlTableName)
+    const _buildGqlFieldsFromMysqlTable = async (mysqlConfig, mysqlTableName) => {
+        const fieldsMap = await _retrieveTableFields(mysqlConfig, mysqlTableName)
 
         const fields = {}
         Object.keys(fieldsMap).forEach(field => {
             const fieldName = fieldsMap[field].Field
-            fields[fieldName] = mysqlTypeToGraphQLType(fieldsMap[field].Type)
+            fields[fieldName] = _mysqlTypeToGraphQLType(fieldsMap[field].Type)
         })
 
         return fields
     }
 
-    const buildSelectArgs = (flatProjection) => {
+    const _buildSelectArgs = (flatProjection) => {
         const selectArgs = Object.keys(flatProjection).join(",")
 
         return selectArgs
     }
 
-    const buildResolversForGqlType = (mysqlClient, mysqlTableName, gqlType) => {
+    const _buildResolversForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
         return {
             [clearName(mysqlTableName)]: {
                 type: [gqlType],
                 args: gqlType.getFields(),
                 resolve: async (_, args, __, info) => {
                     const flatProjection = getFlatProjectionFromAST(info)
+
                     return await new Promise((resolve, reject) => {
-                        mysqlClient.select(
+                        const mysqlConnection = mysql.createConnection(mysqlConfig)
+                        
+                        // Mix-in for Data Access Methods and SQL Autogenerating Methods
+                        mysqlUtilities.upgrade(mysqlConnection)
+
+                        mysqlConnection.select(
                             mysqlTableName,
-                            buildSelectArgs(flatProjection),
+                            _buildSelectArgs(flatProjection),
                             args,
-                            (err, results) => !!err ? reject(err) : resolve(results)
+                            (err, results) => {
+                                !!err ? reject(err) : resolve(results)
+                            }
                         )
+
+                        mysqlConnection.end()
                     })
                 },
             }
@@ -124,18 +144,13 @@ module.exports = ( () => {
                 throw new Error("You must provide a valid (pattern: _a-zA-Z0-9) 'graphqlTypeName'.")
             }
 
-            if (!opts.mysqlClient) {
-                throw new Error("You must provide a 'mysqlClient' connected to the database.")
+            if (!opts.mysqlConfig) {
+                throw new Error("You must provide a 'mysqlConfig' for the database.")
             }
 
             if (!opts.mysqlTableName) {
                 throw new Error("You must provide the 'mysqlTableName' that you want to access.")
             }
-
-            // Mix-in for Data Access Methods and SQL Autogenerating Methods
-            mysqlUtilities.upgrade(opts.mysqlClient)
-            // Mix-in for Introspection Methods
-            mysqlUtilities.introspection(opts.mysqlClient)
 
             // initialize the graphql type to build
             const graphqlTypeName = clearName(opts.graphqlTypeName)
@@ -144,11 +159,11 @@ module.exports = ( () => {
             })
 
             // add fields
-            const fields = await buildGqlFieldsFromMysqlTable(opts.mysqlClient, opts.mysqlTableName)
+            const fields = await _buildGqlFieldsFromMysqlTable(opts.mysqlConfig, opts.mysqlTableName)
             gqlType.addFields(fields)
 
             // add resolvers
-            const resolvers = buildResolversForGqlType(opts.mysqlClient, opts.mysqlTableName, gqlType)
+            const resolvers = _buildResolversForGqlType(opts.mysqlConfig, opts.mysqlTableName, gqlType)
             const schemaComposer = new SchemaComposer()
             schemaComposer.Query.addFields(resolvers)
 
@@ -156,7 +171,6 @@ module.exports = ( () => {
             const gqlSchema = schemaComposer.buildSchema()
 
             return gqlSchema
-
         }
     }
 })()
