@@ -113,7 +113,7 @@ module.exports = (() => {
 
                     return await new Promise((resolve, reject) => {
                         const mysqlConnection = mysql.createConnection(mysqlConfig)
-                        
+                        console.log("open")
                         // Mix-in for Data Access Methods and SQL Autogenerating Methods
                         mysqlUtilities.upgrade(mysqlConnection)
 
@@ -125,7 +125,7 @@ module.exports = (() => {
                                 !!err ? reject(err) : resolve(results)
                             }
                         )
-
+                        console.log("close")
                         mysqlConnection.end()
                     })
                 },

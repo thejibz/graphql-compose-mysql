@@ -31,7 +31,7 @@
   },
   "scripts": {
     "test": "jest",
-    "dev": "nodemon ./src/__dev__.js",
+    "dev": "node ./src/__dev__.js",
     "start": "node ./src/index.js",
     "lint": "eslint ./src"
   }
