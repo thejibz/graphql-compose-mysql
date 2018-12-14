@@ -108,16 +108,18 @@ module.exports = (() => {
             [clearName(mysqlTableName)]: {
                 type: [gqlType],
                 args: gqlType.getFields(),
-                resolve: async (_, args, __, info) => {
+                resolve: async (_, args, context, info) => {
                     const flatProjection = getFlatProjectionFromAST(info)
-
+                    
                     return await new Promise((resolve, reject) => {
-                        const mysqlConnection = mysql.createConnection(mysqlConfig)
-                        console.log("open")
-                        // Mix-in for Data Access Methods and SQL Autogenerating Methods
-                        mysqlUtilities.upgrade(mysqlConnection)
+                        if (!context.mysqlPool) { // initialize the connection pool
+                            context.mysqlPool = mysql.createPool(mysqlConfig)
+                            
+                            // Mix-in for Data Access Methods and SQL Autogenerating Methods
+                            mysqlUtilities.upgrade(context.mysqlPool)
+                        }
 
-                        mysqlConnection.select(
+                        context.mysqlPool.select(
                             mysqlTableName,
                             _buildSelectArgs(flatProjection),
                             args,
@@ -125,8 +127,6 @@ module.exports = (() => {
                                 !!err ? reject(err) : resolve(results)
                             }
                         )
-                        console.log("close")
-                        mysqlConnection.end()
                     })
                 },
             }
