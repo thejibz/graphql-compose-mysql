@@ -8,6 +8,7 @@ describe("Test the worldql", () => {
         return composeWithMysql({
             graphqlTypeName: "employeeT",
             mysqlConfig: {
+                connectionLimit : 100,
                 host: "localhost",
                 port: 3306,
                 user: "root",
@@ -16,7 +17,6 @@ describe("Test the worldql", () => {
             },
             mysqlTableName: "employees",
         }).then(employeesSchema => {
-            
             const gqlQuery = `
             {
                 employees(emp_no: 10001, first_name: "Georgi", gender: "M") {

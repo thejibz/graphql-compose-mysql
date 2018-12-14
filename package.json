@@ -12,11 +12,11 @@
   "license": "MIT",
   "devDependencies": {
     "jest": "^23.6.0",
-    "nodemon": "^1.17.3",
-    "exit-hook": "^2.0.0"
+    "nodemon": "^1.17.3"
   },
   "dependencies": {
     "apollo-server": "^2.2.5",
+    "dataloader": "^1.4.0",
     "graphql": "^14.0.2",
     "graphql-compose": "^5.3.4",
     "lodash": "^4.17.10",
@@ -30,7 +30,7 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --detectOpenHandles",
     "dev": "node ./src/__dev__.js",
     "start": "node ./src/index.js",
     "lint": "eslint ./src"

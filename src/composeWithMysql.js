@@ -1,6 +1,7 @@
 const mysql = require("mysql")
 const mysqlUtilities = require("mysql-utilities")
 const { TypeComposer, SchemaComposer, getFlatProjectionFromAST, clearName } = require("graphql-compose")
+const DataLoader = require('dataloader')
 
 module.exports = (() => {
     const typeMap = { // TODO: Add spatial type ???
@@ -104,29 +105,55 @@ module.exports = (() => {
     }
 
     const _buildResolversForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
+
+
+
+
         return {
             [clearName(mysqlTableName)]: {
                 type: [gqlType],
                 args: gqlType.getFields(),
                 resolve: async (_, args, context, info) => {
+                    context = !context ? {} : context
                     const flatProjection = getFlatProjectionFromAST(info)
+                    // A, B
+                    // A, B
+                    // A, B
+                    // A, B, D
+                    // B, D
+                    // get hash of the projection and then add it to the loader name
+                    // in order to have a unique Loader per Projection
+                    // args ("where" arguments) will be the variable part
+                    // Are we sure ? what if the args are the same but the projection is different ?
+                    // Maybe a loader is identified by Projection AND Args ???
                     
-                    return await new Promise((resolve, reject) => {
+                    if (!context[`${clearName(mysqlTableName)}Loader`]) {
                         if (!context.mysqlPool) { // initialize the connection pool
                             context.mysqlPool = mysql.createPool(mysqlConfig)
-                            
+
                             // Mix-in for Data Access Methods and SQL Autogenerating Methods
                             mysqlUtilities.upgrade(context.mysqlPool)
                         }
 
-                        context.mysqlPool.select(
-                            mysqlTableName,
-                            _buildSelectArgs(flatProjection),
-                            args,
-                            (err, results) => {
-                                !!err ? reject(err) : resolve(results)
-                            }
-                        )
+                        context[`${clearName(mysqlTableName)}Loader`] = (args) => {
+                            
+                            context.mysqlPool.select(
+                                mysqlTableName,
+                                _buildSelectArgs(projections),
+                                args,
+                                (err, results) => {
+                                    !!err ? reject(err) : resolve(results)
+                                }
+                            )
+                        }
+                    }
+
+
+
+                    return await new Promise((resolve, reject) => {
+
+
+
                     })
                 },
             }
