@@ -56,25 +56,24 @@ module.exports = (() => {
         year: "Int",
     }
 
-    const _retrieveTableFields = (mysqlConfig, mysqlTableName) => {
+    const _getMysqlTablesNames = (mysqlConnection) => {
         return new Promise((resolve, reject) => {
-            const mysqlConnection = mysql.createConnection(mysqlConfig)
+            mysqlConnection.tables(
+                (err, tables) => !!err ? reject(err) : resolve(Object.keys(tables))
+            )
+        })
+    }
 
-            // Mix-in for Data Access Methods and SQL Autogenerating Methods
-            mysqlUtilities.upgrade(mysqlConnection)
-            // Mix-in for Introspection Methods
-            mysqlUtilities.introspection(mysqlConnection)
-
+    const _retrieveTableFields = (mysqlConnection, mysqlTableName) => {
+        return new Promise((resolve, reject) => {
             mysqlConnection.fields(
                 mysqlTableName,
                 (err, fields) => !!err ? reject(err) : resolve(fields)
             )
-
-            mysqlConnection.end()
         })
     }
 
-    const _mysqlTypeToGraphQLType = (mysqlType) => {
+    const _mysqlTypeToGqlType = (mysqlType) => {
         const extractBaseType = RegExp("^(\\w+)\\W*", "g")
         const baseType = extractBaseType.exec(mysqlType)[1]
 
@@ -87,13 +86,13 @@ module.exports = (() => {
         return gqlType
     }
 
-    const _buildGqlFieldsFromMysqlTable = async (mysqlConfig, mysqlTableName) => {
-        const fieldsMap = await _retrieveTableFields(mysqlConfig, mysqlTableName)
+    const _buildGqlFieldsFromMysqlTable = async (mysqlConnection, mysqlTableName) => {
+        const fieldsMap = await _retrieveTableFields(mysqlConnection, mysqlTableName)
 
         const fields = {}
         Object.keys(fieldsMap).forEach(field => {
             const fieldName = fieldsMap[field].Field
-            fields[fieldName] = _mysqlTypeToGraphQLType(fieldsMap[field].Type)
+            fields[fieldName] = _mysqlTypeToGqlType(fieldsMap[field].Type)
         })
 
         return fields
@@ -105,57 +104,67 @@ module.exports = (() => {
         return selectArgs
     }
 
-    const _buildResolversForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
+    const _addMysqlPoolInContext = (ns, mysqlConfig) => {
+        if (!ns.mysqlPool) { // initialize the connection pool
+            ns.mysqlPool = mysql.createPool(mysqlConfig)
+
+            // Mix-in for Data Access Methods and SQL Autogenerating Methods
+            mysqlUtilities.upgrade(ns.mysqlPool)
+        }
+    }
+
+    const _addDataLoaderForProjectionInContext = (ns, loaderName, mysqlTableName, flatProjection) => {
+        if (!ns[loaderName]) { // create a dataloader for the current projection
+            ns[loaderName] = new DataLoader(argsList => {
+                return Promise.all(argsList.map(args => {
+                    // Used to keep track of running requests (to know if we can terminate the pool)
+                    ns.poolCount = !ns.poolCount ? 1 : ++ns.poolCount
+
+                    return new Promise((resolve, reject) => {
+                        ns.mysqlPool.select(
+                            mysqlTableName,
+                            _buildSelectArgs(flatProjection),
+                            args,
+                            (err, results) => {
+                                // request done, lets decrement the connection count
+                                ns.poolCount--
+                                !!err ? reject(err) : resolve(results)
+                            }
+                        )
+                    })
+                })).then(values => {
+                    if (ns.poolCount === 0) {
+                        // No connection running, we can terminate the pool
+                        ns.mysqlPool.end()
+                    }
+
+                    return values
+                })
+            })
+        }
+    }
+
+    const _buildResolverForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
         return {
             [clearName(mysqlTableName)]: {
                 type: [gqlType],
                 args: gqlType.getFields(),
                 resolve: (_, args, context, info) => {
-                    if(!context) {
+                    if (!context) {
                         throw new Error("You must provide a GraphQL context, even if empty (e.g. contextValue: {})")
                     }
+
+                    const namespace = `gqlComposeMysql${md5(JSON.stringify(mysqlConfig))}`
+                    ns = context[namespace] = !context[namespace] ? {} : context[namespace]
+
+                    _addMysqlPoolInContext(ns, mysqlConfig)
 
                     const flatProjection = getFlatProjectionFromAST(info)
                     const projectionHash = md5(JSON.stringify(flatProjection))
                     const loaderName = `${clearName(mysqlTableName)}${projectionHash}`
+                    _addDataLoaderForProjectionInContext(ns, loaderName, mysqlTableName, flatProjection)
 
-                    if (!context.mysqlPool) { // initialize the connection pool
-                        context.mysqlPool = mysql.createPool(mysqlConfig)
-
-                        // Mix-in for Data Access Methods and SQL Autogenerating Methods
-                        mysqlUtilities.upgrade(context.mysqlPool)
-                    }
-
-                    if (!context[loaderName]) { // create a dataloader for the current projection
-                        context[loaderName] = new DataLoader(argsList => {
-                            return Promise.all(argsList.map(args => {
-                                // Used to keep track of running requests (to know if we can terminate the pool)
-                                context.mysqlPoolCount = !context.mysqlPoolCount ? 1 : ++context.mysqlPoolCount
-
-                                return new Promise((resolve, reject) => {
-                                    context.mysqlPool.select(
-                                        mysqlTableName,
-                                        _buildSelectArgs(flatProjection),
-                                        args,
-                                        (err, results) => {
-                                            // request done, lets decrement the connection count
-                                            --context.mysqlPoolCount
-                                            !!err ? reject(err) : resolve(results)
-                                        }
-                                    )
-                                })
-                            })).then(values => {
-                                if (context.mysqlPoolCount === 0) { 
-                                    // No connection running, we can terminate the pool
-                                    context.mysqlPool.end()
-                                }
-
-                                return values
-                            })
-                        })
-                    }
-
-                    return context[loaderName].load(args)
+                    return ns[loaderName].load(args)
                 },
             }
         }
@@ -165,40 +174,44 @@ module.exports = (() => {
     return {
         composeWithMysql: async (opts) => {
             if (!opts) {
-                throw new Error("Opts is required argument for composeWithMysql()")
-            }
-
-            if (!opts.graphqlTypeName || typeof opts.graphqlTypeName !== "string" || clearName(opts.graphqlTypeName) != opts.graphqlTypeName) {
-                throw new Error("You must provide a valid (pattern: _a-zA-Z0-9) 'graphqlTypeName'.")
+                throw new Error("You must provide arguments when calling composeWithMysql()")
             }
 
             if (!opts.mysqlConfig) {
-                throw new Error("You must provide a 'mysqlConfig' for the database.")
+                throw new Error("You must provide a 'mysqlConfig' argument for the database.")
             }
 
-            if (!opts.mysqlTableName) {
-                throw new Error("You must provide the 'mysqlTableName' that you want to access.")
-            }
+            const mysqlConnection = mysql.createConnection(opts.mysqlConfig)
 
-            // initialize the graphql type to build
-            const graphqlTypeName = clearName(opts.graphqlTypeName)
-            const gqlType = TypeComposer.create({
-                name: graphqlTypeName,
+            // Mix-in for Data Access Methods and SQL Autogenerating Methods
+            mysqlUtilities.upgrade(mysqlConnection)
+            // Mix-in for Introspection Methods
+            mysqlUtilities.introspection(mysqlConnection)
+
+            const schemaComposer = new SchemaComposer();
+
+            return Promise.all((await _getMysqlTablesNames(mysqlConnection)).map(async mysqlTableName => {
+                // initialize the graphql type to build
+                const gqlType = TypeComposer.create({
+                    name: clearName(mysqlTableName) + "T",
+                })
+
+                // add fields
+                const fields = await _buildGqlFieldsFromMysqlTable(mysqlConnection, mysqlTableName)
+                gqlType.addFields(fields)
+
+                // add resolver
+                const resolvers = _buildResolverForGqlType(opts.mysqlConfig, mysqlTableName, gqlType)
+
+                schemaComposer.Query.addFields(resolvers)
+            })).then( _ => {
+                mysqlConnection.end()
+
+                // build the final graphQL schema
+                const gqlSchema = schemaComposer.buildSchema()
+    
+                return gqlSchema
             })
-
-            // add fields
-            const fields = await _buildGqlFieldsFromMysqlTable(opts.mysqlConfig, opts.mysqlTableName)
-            gqlType.addFields(fields)
-
-            // add resolvers
-            const resolvers = _buildResolversForGqlType(opts.mysqlConfig, opts.mysqlTableName, gqlType)
-            const schemaComposer = new SchemaComposer()
-            schemaComposer.Query.addFields(resolvers)
-
-            // build the final graphQL schema
-            const gqlSchema = schemaComposer.buildSchema()
-
-            return gqlSchema
         }
     }
 })()

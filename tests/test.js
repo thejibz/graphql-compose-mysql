@@ -6,7 +6,6 @@ describe("Test the worldql", () => {
 
     test("get all fields for employee n°10001", () => {
         return composeWithMysql({
-            graphqlTypeName: "employeeT",
             mysqlConfig: {
                 connectionLimit: 100,
                 host: "localhost",
@@ -15,7 +14,6 @@ describe("Test the worldql", () => {
                 password: "secret",
                 database: "employees",
             },
-            mysqlTableName: "employees",
         }).then(employeesSchema => {
             const gqlQuery = `
             {
@@ -53,7 +51,6 @@ describe("Test the worldql", () => {
 
     test("get some fields for employee n°10001 multiples times", () => {
         return composeWithMysql({
-            graphqlTypeName: "employeeT",
             mysqlConfig: {
                 host: "localhost",
                 port: 3306,
@@ -61,7 +58,6 @@ describe("Test the worldql", () => {
                 password: "secret",
                 database: "employees",
             },
-            mysqlTableName: "employees",
         }).then(employeesSchema => {
 
             const gqlQuery = `
