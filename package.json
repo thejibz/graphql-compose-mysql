@@ -20,6 +20,7 @@
     "graphql": "^14.0.2",
     "graphql-compose": "^5.3.4",
     "lodash": "^4.17.10",
+    "md5": "^2.2.1",
     "mysql": "^2.16.0",
     "mysql-utilities": "^1.0.13"
   },
@@ -30,8 +31,8 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "test": "jest --detectOpenHandles",
-    "dev": "node ./src/__dev__.js",
+    "test": "jest",
+    "playground": "node ./src/__playground__.js",
     "start": "node ./src/index.js",
     "lint": "eslint ./src"
   }

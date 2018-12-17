@@ -1,4 +1,4 @@
-.PHONY : install test github push
+.PHONY : playground install test github push
 
 install:
 	rm -f yarn.lock || true
@@ -6,6 +6,9 @@ install:
 
 test:
 	yarn test
+
+playground:
+	yarn playground
 
 push:
 	$(MAKE) test

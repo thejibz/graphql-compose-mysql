@@ -2,6 +2,7 @@ const mysql = require("mysql")
 const mysqlUtilities = require("mysql-utilities")
 const { TypeComposer, SchemaComposer, getFlatProjectionFromAST, clearName } = require("graphql-compose")
 const DataLoader = require('dataloader')
+const md5 = require('md5')
 
 module.exports = (() => {
     const typeMap = { // TODO: Add spatial type ???
@@ -105,56 +106,44 @@ module.exports = (() => {
     }
 
     const _buildResolversForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
-
-
-
-
         return {
             [clearName(mysqlTableName)]: {
                 type: [gqlType],
                 args: gqlType.getFields(),
-                resolve: async (_, args, context, info) => {
+                resolve: (_, args, context, info) => {
                     context = !context ? {} : context
                     const flatProjection = getFlatProjectionFromAST(info)
-                    // A, B
-                    // A, B
-                    // A, B
-                    // A, B, D
-                    // B, D
-                    // get hash of the projection and then add it to the loader name
-                    // in order to have a unique Loader per Projection
-                    // args ("where" arguments) will be the variable part
-                    // Are we sure ? what if the args are the same but the projection is different ?
-                    // Maybe a loader is identified by Projection AND Args ???
-                    
-                    if (!context[`${clearName(mysqlTableName)}Loader`]) {
-                        if (!context.mysqlPool) { // initialize the connection pool
-                            context.mysqlPool = mysql.createPool(mysqlConfig)
+                    const projectionHash = md5(JSON.stringify(flatProjection))
+                    const loaderName = `${clearName(mysqlTableName)}${projectionHash}`
 
-                            // Mix-in for Data Access Methods and SQL Autogenerating Methods
-                            mysqlUtilities.upgrade(context.mysqlPool)
-                        }
+                    if (!context.mysqlPool) { // initialize the connection pool
+                        context.mysqlPool = mysql.createPool(mysqlConfig)
 
-                        context[`${clearName(mysqlTableName)}Loader`] = (args) => {
-                            
-                            context.mysqlPool.select(
-                                mysqlTableName,
-                                _buildSelectArgs(projections),
-                                args,
-                                (err, results) => {
-                                    !!err ? reject(err) : resolve(results)
-                                }
-                            )
-                        }
+                        // Mix-in for Data Access Methods and SQL Autogenerating Methods
+                        mysqlUtilities.upgrade(context.mysqlPool)
                     }
 
+                    if (!context[loaderName]) { // create a dataloader for the current projection
+                        context[loaderName] = new DataLoader(argsList => {
+                            return Promise.all(argsList.map(args => {
+                                return new Promise((resolve, reject) => {
+                                    context.mysqlPool.select(
+                                        mysqlTableName,
+                                        _buildSelectArgs(flatProjection),
+                                        args,
+                                        (err, results) => {
+                                            !!err ? reject(err) : resolve(results)
+                                        }
+                                    )
+                                })
+                            })).then(values => {
+                                context.mysqlPool.end() // release the connections pool
+                                return values
+                            })
+                        })
+                    }
 
-
-                    return await new Promise((resolve, reject) => {
-
-
-
-                    })
+                    return context[loaderName].load(args)
                 },
             }
         }
