@@ -111,7 +111,9 @@ module.exports = (() => {
                 type: [gqlType],
                 args: gqlType.getFields(),
                 resolve: (_, args, context, info) => {
-                    context = !context ? {} : context
+                    if(!context) {
+                        throw new Error("You must provide a GraphQL context, even if empty (e.g. contextValue: {})")
+                    }
 
                     const flatProjection = getFlatProjectionFromAST(info)
                     const projectionHash = md5(JSON.stringify(flatProjection))
@@ -144,7 +146,7 @@ module.exports = (() => {
                                 })
                             })).then(values => {
                                 if (context.mysqlPoolCount === 0) { 
-                                    // No connections running, we can terminate the pool
+                                    // No connection running, we can terminate the pool
                                     context.mysqlPool.end()
                                 }
 
