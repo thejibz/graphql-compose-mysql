@@ -112,6 +112,7 @@ module.exports = (() => {
                 args: gqlType.getFields(),
                 resolve: (_, args, context, info) => {
                     context = !context ? {} : context
+
                     const flatProjection = getFlatProjectionFromAST(info)
                     const projectionHash = md5(JSON.stringify(flatProjection))
                     const loaderName = `${clearName(mysqlTableName)}${projectionHash}`
@@ -126,18 +127,27 @@ module.exports = (() => {
                     if (!context[loaderName]) { // create a dataloader for the current projection
                         context[loaderName] = new DataLoader(argsList => {
                             return Promise.all(argsList.map(args => {
+                                // Used to keep track of running requests (to know if we can terminate the pool)
+                                context.mysqlPoolCount = !context.mysqlPoolCount ? 1 : ++context.mysqlPoolCount
+
                                 return new Promise((resolve, reject) => {
                                     context.mysqlPool.select(
                                         mysqlTableName,
                                         _buildSelectArgs(flatProjection),
                                         args,
                                         (err, results) => {
+                                            // request done, lets decrement the connection count
+                                            --context.mysqlPoolCount
                                             !!err ? reject(err) : resolve(results)
                                         }
                                     )
                                 })
                             })).then(values => {
-                                context.mysqlPool.end() // release the connections pool
+                                if (context.mysqlPoolCount === 0) { 
+                                    // No connections running, we can terminate the pool
+                                    context.mysqlPool.end()
+                                }
+
                                 return values
                             })
                         })

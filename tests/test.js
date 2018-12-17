@@ -32,7 +32,8 @@ describe("Test the worldql", () => {
             return GraphQL.graphql({
                 schema: employeesSchema,
                 source: gqlQuery,
-                variableValues: {}
+                variableValues: {},
+                contextValue: {}
             }).then(gqlResponse => {
                 expect(gqlResponse).toMatchObject({
                     data: {
@@ -50,7 +51,7 @@ describe("Test the worldql", () => {
         })
     })
 
-    test("get some fields for employee n°10001, 10002, 10003, 10004, 10005, 10006", () => {
+    test("get some fields for employee n°10001 multiples times", () => {
         return composeWithMysql({
             graphqlTypeName: "employeeT",
             mysqlConfig: {
@@ -77,19 +78,21 @@ describe("Test the worldql", () => {
                   birth_date
                   hire_date
                 }
-                emp_10001ter: employees(emp_no: 10001) {
+                emp_10001ter: employees(emp_no: 10001, gender:"M") {
                     last_name
                     gender
                     birth_date
                     hire_date
                   }
-                  emp_10001a: employees(emp_no: 10001) {
+                  emp_10002: employees(emp_no: 10002, gender:"F") {
                     last_name
                     gender
                     birth_date
                     hire_date
                   }
-                  emp_10001b: employees(emp_no: 10001) {
+                  emp_10003: employees(emp_no: 10003) {
+                    emp_no
+                    first_name
                     last_name
                     gender
                     birth_date
@@ -112,7 +115,8 @@ describe("Test the worldql", () => {
             return GraphQL.graphql({
                 schema: employeesSchema,
                 source: gqlQuery,
-                variableValues: {}
+                variableValues: {},
+                contextValue: {}
             }).then(gqlResponse => {
                 expect(gqlResponse).toMatchObject({
                     data: {
@@ -140,20 +144,22 @@ describe("Test the worldql", () => {
                                 hire_date: "1986-06-25T22:00:00.000Z"
                             }
                         ],
-                        emp_10001a: [
+                        emp_10002: [
                             {
-                                last_name: "Facello",
-                                gender: "M",
-                                birth_date: "1953-09-01T23:00:00.000Z",
-                                hire_date: "1986-06-25T22:00:00.000Z"
+                                "last_name": "Simmel",
+                                "gender": "F",
+                                "birth_date": "1964-06-01T23:00:00.000Z",
+                                "hire_date": "1985-11-20T23:00:00.000Z"
                             }
                         ],
-                        emp_10001b: [
+                        emp_10003: [
                             {
-                                last_name: "Facello",
-                                gender: "M",
-                                birth_date: "1953-09-01T23:00:00.000Z",
-                                hire_date: "1986-06-25T22:00:00.000Z"
+                                "emp_no": 10003,
+                                "first_name": "Parto",
+                                "last_name": "Bamford",
+                                "gender": "M",
+                                "birth_date": "1959-12-02T23:00:00.000Z",
+                                "hire_date": "1986-08-27T22:00:00.000Z"
                             }
                         ],
                         emp_10001c: [
