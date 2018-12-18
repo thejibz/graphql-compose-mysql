@@ -10,52 +10,7 @@ describe("Test the worldql", () => {
         context = {}
     })
 
-    test("get all fields for employee n°10001", () => {
-        return composeWithMysql({
-            mysqlConfig: {
-                connectionLimit: 100,
-                host: "localhost",
-                port: 3306,
-                user: "root",
-                password: "secret",
-                database: "employees",
-            },
-        }).then(employeesSchema => {
-            const gqlQuery = `
-            {
-                employees(emp_no: 10001) {
-                  emp_no
-                  first_name
-                  last_name
-                  gender
-                  birth_date
-                  hire_date
-                }
-            }`
-
-            return GraphQL.graphql({
-                schema: employeesSchema,
-                source: gqlQuery,
-                variableValues: {},
-                contextValue: context
-            }).then(gqlResponse => {
-                expect(gqlResponse).toMatchObject({
-                    data: {
-                        employees: [{
-                            emp_no: 10001,
-                            first_name: "Georgi",
-                            last_name: "Facello",
-                            gender: "M",
-                            birth_date: "1953-09-01T23:00:00.000Z",
-                            hire_date: "1986-06-25T22:00:00.000Z"
-                        }]
-                    }
-                })
-            })
-        })
-    })
-
-    test("get some fields from some employees multiples times (dataloader test)", () => {
+    test("get some fields from some employees multiples times", () => {
         return composeWithMysql({
             mysqlConfig: {
                 host: "localhost",
@@ -118,7 +73,7 @@ describe("Test the worldql", () => {
                 schema: employeesSchema,
                 source: gqlQuery,
                 variableValues: {},
-                contextValue: {}
+                contextValue: context
             }).then(gqlResponse => {
                 expect(gqlResponse).toMatchObject({
                     data: {

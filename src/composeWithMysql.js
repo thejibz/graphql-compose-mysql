@@ -1,7 +1,9 @@
+const debug = require("debug")("graphql-compose-mysql")
 const mysql = require("mysql")
 const mysqlUtilities = require("mysql-utilities")
-const { TypeComposer, SchemaComposer, getFlatProjectionFromAST, clearName } = require("graphql-compose")
+const { Resolver, SchemaComposer, getFlatProjectionFromAST, getProjectionFromAST, clearName } = require("graphql-compose")
 const DataLoader = require('dataloader')
+const { printSchema } = require("graphql")
 const md5 = require('md5')
 
 module.exports = (() => {
@@ -56,10 +58,35 @@ module.exports = (() => {
         year: "Int",
     }
 
+    const _clearNameForType = (name) => {
+        return clearName(name) + "T"
+    }
+
     const _getMysqlTablesNames = (mysqlConnection) => {
         return new Promise((resolve, reject) => {
             mysqlConnection.tables(
                 (err, tables) => !!err ? reject(err) : resolve(Object.keys(tables))
+            )
+        })
+    }
+
+    const _getForeignFields = (mysqlConnection, mysqlTableName) => {
+        return new Promise((resolve, reject) => {
+            mysqlConnection.foreign(
+                mysqlTableName,
+                (err, foreignFields) => {
+                    if (!!err)
+                        reject(err)
+                    else {
+                        resolve(Object.values(foreignFields).map(field => {
+                            return {
+                                columnName: field.COLUMN_NAME,
+                                referencedTableName: field.REFERENCED_TABLE_NAME,
+                                referencedColumnName: field.REFERENCED_COLUMN_NAME
+                            }
+                        }))
+                    }
+                }
             )
         })
     }
@@ -91,17 +118,11 @@ module.exports = (() => {
 
         const fields = {}
         Object.keys(fieldsMap).forEach(field => {
-            const fieldName = fieldsMap[field].Field
+            const fieldName = clearName(fieldsMap[field].Field)
             fields[fieldName] = _mysqlTypeToGqlType(fieldsMap[field].Type)
         })
 
         return fields
-    }
-
-    const _buildSelectArgs = (flatProjection) => {
-        const selectArgs = Object.keys(flatProjection).join(",")
-
-        return selectArgs
     }
 
     const _addMysqlPoolInContext = (ns, mysqlConfig) => {
@@ -113,61 +134,67 @@ module.exports = (() => {
         }
     }
 
-    const _addDataLoaderForProjectionInContext = (ns, loaderName, mysqlTableName, flatProjection) => {
-        if (!ns[loaderName]) { // create a dataloader for the current projection
+    const _buildSelectArgs = (flatProjection) => {
+        const selectArgs = Object.keys(flatProjection).join(",")
+
+        return selectArgs
+    }
+
+    const _buildProjectionFromInfo = (info) => {
+        const projection = Object.entries(getProjectionFromAST(info))
+            // [ 'emp_no', true ] or [ 'departments', { dept_no: {} } ]
+            // (Keep only the scalar field (ie. no sub-object))
+            .filter(entry => Object.values(entry[1]).length == 0)
+            .reduce((acc, entry) => Object.assign(acc, { [entry[0]]: true }), {})
+
+        return projection
+    }
+
+    const _addDataLoaderForProjectionInContext = (ns, loaderName, mysqlTableName, projection) => {
+        if (!ns[loaderName]) { // if needed, create a new dataloader for the current projection
             ns[loaderName] = new DataLoader(argsList => {
                 return Promise.all(argsList.map(args => {
-                    // Used to keep track of running requests (to know if we can terminate the pool)
-                    ns.poolCount = !ns.poolCount ? 1 : ++ns.poolCount
-
                     return new Promise((resolve, reject) => {
                         ns.mysqlPool.select(
                             mysqlTableName,
-                            _buildSelectArgs(flatProjection),
+                            _buildSelectArgs(projection),
                             args,
                             (err, results) => {
-                                // request done, lets decrement the connection count
-                                ns.poolCount--
                                 !!err ? reject(err) : resolve(results)
                             }
                         )
                     })
-                })).then(values => {
-                    if (ns.poolCount === 0) {
-                        // No connection running, we can terminate the pool
-                        ns.mysqlPool.end()
-                    }
-
-                    return values
-                })
+                }))
             })
         }
     }
 
     const _buildResolverForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
-        return {
-            [clearName(mysqlTableName)]: {
-                type: [gqlType],
-                args: gqlType.getFields(),
-                resolve: (_, args, context, info) => {
-                    if (!context) {
-                        throw new Error("You must provide a GraphQL context, even if empty (e.g. contextValue: {})")
-                    }
+        return new Resolver({
+            name: [clearName(mysqlTableName)],
+            type: [gqlType],
+            args: gqlType.getFields(),
+            resolve: ({ source, args, context, info }) => {
+                if (!context) {
+                    throw new Error("You must provide a GraphQL context, even if empty (e.g. contextValue: {})")
+                }
 
-                    const namespace = `gqlComposeMysql${md5(JSON.stringify(mysqlConfig))}`
-                    ns = context[namespace] = !context[namespace] ? {} : context[namespace]
+                /**
+                 * Use a namespace specific to the current mysqlConfig to avoid collisions in context 
+                 */
+                const namespace = `gqlComposeMysql${md5(JSON.stringify(mysqlConfig))}`
+                ns = context[namespace] = !context[namespace] ? {} : context[namespace]
 
-                    _addMysqlPoolInContext(ns, mysqlConfig)
+                _addMysqlPoolInContext(ns, mysqlConfig)
 
-                    const flatProjection = getFlatProjectionFromAST(info)
-                    const projectionHash = md5(JSON.stringify(flatProjection))
-                    const loaderName = `${clearName(mysqlTableName)}${projectionHash}`
-                    _addDataLoaderForProjectionInContext(ns, loaderName, mysqlTableName, flatProjection)
+                const projection = _buildProjectionFromInfo(info)
+                const projectionHash = md5(JSON.stringify(projection))
+                const loaderName = `${clearName(mysqlTableName)}${projectionHash}`
+                _addDataLoaderForProjectionInContext(ns, loaderName, mysqlTableName, projection)
 
-                    return ns[loaderName].load(args)
-                },
+                return ns[loaderName].load(args)
             }
-        }
+        })
     }
 
     // public interfaces
@@ -188,29 +215,63 @@ module.exports = (() => {
             // Mix-in for Introspection Methods
             mysqlUtilities.introspection(mysqlConnection)
 
-            const schemaComposer = new SchemaComposer();
+            // initialize the graphQL schema
+            const schemaComposer = new SchemaComposer()
 
-            return Promise.all((await _getMysqlTablesNames(mysqlConnection)).map(async mysqlTableName => {
-                // initialize the graphql type to build
-                const gqlType = TypeComposer.create({
-                    name: clearName(mysqlTableName) + "T",
+            const mysqlTablesNames = await _getMysqlTablesNames(mysqlConnection)
+
+            return Promise.all(mysqlTablesNames.map(async mysqlTableName => {
+                // initialize the graphql type to build from the mysql table
+                const gqlTC = schemaComposer.TypeComposer.create({
+                    name: _clearNameForType(mysqlTableName),
                 })
 
-                // add fields
+                // add local fields
                 const fields = await _buildGqlFieldsFromMysqlTable(mysqlConnection, mysqlTableName)
-                gqlType.addFields(fields)
+                gqlTC.addFields(fields)
 
-                // add resolver
-                const resolvers = _buildResolverForGqlType(opts.mysqlConfig, mysqlTableName, gqlType)
+                // add local resolver
+                const resolver = _buildResolverForGqlType(opts.mysqlConfig, mysqlTableName, gqlTC)
+                schemaComposer.Query.addFields({ [resolver.name]: resolver })
+            })).then(_ => {
+                return Promise.all(mysqlTablesNames.map(async mysqlTableName => {
+                    const foreignFields = await _getForeignFields(mysqlConnection, mysqlTableName)
+                    /**
+                     * [ {  columnName: 'dept_no',
+                            referencedTableName: 'departments',
+                            referencedColumnName: 'dept_no' },
+                        {   columnName: 'emp_no',
+                            referencedTableName: 'employees',
+                            referencedColumnName: 'emp_no' } ]
+                     */
 
-                schemaComposer.Query.addFields(resolvers)
-            })).then( _ => {
-                mysqlConnection.end()
+                    // add foreign fields
+                    foreignFields.forEach(foreignField => {
+                        const localTC = schemaComposer.get(_clearNameForType(mysqlTableName))
 
-                // build the final graphQL schema
-                const gqlSchema = schemaComposer.buildSchema()
-    
-                return gqlSchema
+                        const foreignResolver = schemaComposer.Query.getField(clearName(foreignField.referencedTableName))
+
+                        localTC.addRelation(
+                            clearName(foreignField.referencedTableName),
+                            {
+                                resolver: () => foreignResolver,
+                                prepareArgs: {
+                                    [clearName(foreignField.referencedColumnName)]: source => {
+                                        return source[clearName(foreignField.columnName)] 
+                                    },
+                                },
+                                projection: { [clearName(foreignField.columnName)]: true }
+                            }
+                        )
+                    })
+                })).then(_ => {
+                    mysqlConnection.end()
+
+                    // build the graphQL schema
+                    const gqlSchema = schemaComposer.buildSchema()
+                    //console.log(printSchema(gqlSchema))
+                    return gqlSchema
+                })
             })
         }
     }

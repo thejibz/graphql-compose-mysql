@@ -11,6 +11,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "debug": "^4.1.0",
     "jest": "^23.6.0",
     "nodemon": "^1.17.3"
   },
@@ -31,8 +32,8 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "test": "jest",
-    "playground": "node ./src/__playground__.js",
+    "test": "DEBUG='graphql-compose-mysql' jest",
+    "playground": "DEBUG='graphql-compose-mysql' node ./src/__playground__.js",
     "start": "node ./src/index.js",
     "lint": "eslint ./src"
   }
