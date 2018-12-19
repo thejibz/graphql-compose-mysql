@@ -4,13 +4,7 @@ const { composeWithMysql } = require("../src/index")
 describe("Test the worldql", () => {
     jest.setTimeout(30000)
 
-    let context = {}
-
-    afterEach(() => {
-        context = {}
-    })
-
-    test("get all fields for employee n°10001", () => {
+     test("get all fields for employee n°10001", () => {
         return composeWithMysql({
             mysqlConfig: {
                 connectionLimit: 100,
@@ -37,7 +31,7 @@ describe("Test the worldql", () => {
                 schema: employeesSchema,
                 source: gqlQuery,
                 variableValues: {},
-                contextValue: context
+                contextValue: {}
             }).then(gqlResponse => {
                 expect(gqlResponse).toMatchObject({
                     data: {

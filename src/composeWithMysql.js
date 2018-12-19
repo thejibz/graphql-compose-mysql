@@ -165,6 +165,13 @@ module.exports = (() => {
                         )
                     })
                 }))
+            },{
+                /**
+                 * How to handle the cache ?
+                 *  Should be "one query - one cache" but where to hook when a query end ?
+                 *      the "info" object could be a way...
+                 */
+                cache: false
             })
         }
     }

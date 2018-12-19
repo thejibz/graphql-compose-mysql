@@ -32,7 +32,7 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "test": "DEBUG='graphql-compose-mysql' jest",
+    "test": "DEBUG='graphql-compose-mysql' jest --forceExit --detectOpenHandles",
     "playground": "DEBUG='graphql-compose-mysql' node ./src/__playground__.js",
     "start": "node ./src/index.js",
     "lint": "eslint ./src"
