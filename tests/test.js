@@ -7,7 +7,8 @@ describe("Test the worldql", () => {
      test("get all fields for employee n°10001", () => {
         return composeWithMysql({
             mysqlConfig: {
-                connectionLimit: 100,
+                //debug: ['ComQueryPacket'],
+                //connectionLimit: 100,
                 host: "localhost",
                 port: 3306,
                 user: "root",

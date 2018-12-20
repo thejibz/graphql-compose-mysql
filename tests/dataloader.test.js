@@ -7,6 +7,7 @@ describe("Test the worldql", () => {
     test("get some fields from some employees multiples times", () => {
         return composeWithMysql({
             mysqlConfig: {
+                //debug: ['ComQueryPacket'],
                 host: "localhost",
                 port: 3306,
                 user: "root",

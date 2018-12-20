@@ -20,6 +20,7 @@
     "dataloader": "^1.4.0",
     "graphql": "^14.0.2",
     "graphql-compose": "^5.3.4",
+    "knex": "^0.16.2",
     "lodash": "^4.17.10",
     "md5": "^2.2.1",
     "mysql": "^2.16.0",
@@ -32,7 +33,7 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "test": "DEBUG='graphql-compose-mysql' jest --forceExit --detectOpenHandles",
+    "test": "DEBUG_DEPTH=15 DEBUG='graphql-compose-mysql' jest --forceExit --detectOpenHandles",
     "playground": "DEBUG='graphql-compose-mysql' node ./src/__playground__.js",
     "start": "node ./src/index.js",
     "lint": "eslint ./src"

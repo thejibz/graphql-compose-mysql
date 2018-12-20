@@ -6,6 +6,7 @@ const DataLoader = require('dataloader')
 const { printSchema } = require("graphql")
 const md5 = require('md5')
 
+
 module.exports = (() => {
     const typeMap = { // TODO: Add spatial type ???
         bigint: "Int",
@@ -125,25 +126,25 @@ module.exports = (() => {
         return fields
     }
 
-    const _addMysqlPoolInContext = (ns, mysqlConfig) => {
-        if (!ns.mysqlPool) { // initialize the connection pool
-            ns.mysqlPool = mysql.createPool(mysqlConfig)
-
-            // Mix-in for Data Access Methods and SQL Autogenerating Methods
-            mysqlUtilities.upgrade(ns.mysqlPool)
+    const _addKnexInContext = (ns, mysqlConfig) => {
+        if (!ns.knex) { // initialize the connection pool
+            ns.knex = require('knex')({
+                client: "mysql",
+                connection: Object.assign(mysqlConfig, { multipleStatements: true })
+            })
         }
     }
 
     const _buildSelectArgs = (flatProjection) => {
-        const selectArgs = Object.keys(flatProjection).join(",")
+        const selectArgs = Object.keys(flatProjection)
 
         return selectArgs
     }
 
     const _buildProjectionFromInfo = (info) => {
         const projection = Object.entries(getProjectionFromAST(info))
-            // [ 'emp_no', true ] or [ 'departments', { dept_no: {} } ]
-            // (Keep only the scalar field (ie. no sub-object))
+            // [ 'emp_no', {} ] or [ 'emp_no', true ] or [ 'departments', { dept_no: {} } ]
+            // Keep only the scalar field ie. no sub-object ie. either "{}"" or "true" for value
             .filter(entry => Object.values(entry[1]).length == 0)
             .reduce((acc, entry) => Object.assign(acc, { [entry[0]]: true }), {})
 
@@ -153,26 +154,38 @@ module.exports = (() => {
     const _addDataLoaderForProjectionInContext = (ns, loaderName, mysqlTableName, projection) => {
         if (!ns[loaderName]) { // if needed, create a new dataloader for the current projection
             ns[loaderName] = new DataLoader(argsList => {
-                return Promise.all(argsList.map(args => {
-                    return new Promise((resolve, reject) => {
-                        ns.mysqlPool.select(
-                            mysqlTableName,
-                            _buildSelectArgs(projection),
-                            args,
-                            (err, results) => {
-                                !!err ? reject(err) : resolve(results)
-                            }
-                        )
+                if (argsList.length > 1) {
+                    const selects = []
+                    const bindings = []
+
+                    argsList.map(args => {
+                        const statements = ns.knex(mysqlTableName)
+                            .select(_buildSelectArgs(projection))
+                            .where(args).toSQL().toNative()
+
+                        selects.push(statements.sql)
+                        bindings.push(statements.bindings)
                     })
-                }))
-            },{
-                /**
-                 * How to handle the cache ?
-                 *  Should be "one query - one cache" but where to hook when a query end ?
-                 *      the "info" object could be a way...
-                 */
-                cache: false
-            })
+
+                    return ns.knex
+                        .raw(selects.join(";"), [].concat.apply([], bindings))
+                        .then(rows => rows[0])
+
+                } else { // argList == 1
+                    return ns.knex(mysqlTableName)
+                        .select(_buildSelectArgs(projection))
+                        .where(argsList[0])
+                        .then(rows => [rows])
+                }
+            }, {
+                    /**
+                     * How to handle the cache ?
+                     *  Should be "one query - one cache" 
+                     *      but where to hook when a query end in order to clear the cache ?
+                     *          the "info" object could be a way...
+                     */
+                    cache: false
+                })
         }
     }
 
@@ -192,7 +205,7 @@ module.exports = (() => {
                 const namespace = `gqlComposeMysql${md5(JSON.stringify(mysqlConfig))}`
                 ns = context[namespace] = !context[namespace] ? {} : context[namespace]
 
-                _addMysqlPoolInContext(ns, mysqlConfig)
+                _addKnexInContext(ns, mysqlConfig)
 
                 const projection = _buildProjectionFromInfo(info)
                 const projectionHash = md5(JSON.stringify(projection))
@@ -215,6 +228,7 @@ module.exports = (() => {
                 throw new Error("You must provide a 'mysqlConfig' argument for the database.")
             }
 
+            // TODO optimize schema creation (use a pool instead of a single connection ?)
             const mysqlConnection = mysql.createConnection(opts.mysqlConfig)
 
             // Mix-in for Data Access Methods and SQL Autogenerating Methods
@@ -264,7 +278,7 @@ module.exports = (() => {
                                 resolver: () => foreignResolver,
                                 prepareArgs: {
                                     [clearName(foreignField.referencedColumnName)]: source => {
-                                        return source[clearName(foreignField.columnName)] 
+                                        return source[clearName(foreignField.columnName)]
                                     },
                                 },
                                 projection: { [clearName(foreignField.columnName)]: true }

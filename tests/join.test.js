@@ -8,7 +8,7 @@ describe("Test the worldql", () => {
     test("get dept_manager with join on employees and departments", () => {
         return composeWithMysql({
             mysqlConfig: {
-                connectionLimit: 100,
+                //connectionLimit: 100,
                 host: "localhost",
                 port: 3306,
                 user: "root",
@@ -20,7 +20,6 @@ describe("Test the worldql", () => {
             {
                 dept_manager(dept_no: "d003") {
                     from_date
-                    emp_no
                     employees {
                       emp_no
                       last_name
@@ -43,7 +42,6 @@ describe("Test the worldql", () => {
                             "dept_manager": [
                                 {
                                     "from_date": "1984-12-31T23:00:00.000Z",
-                                    "emp_no": 110183,
                                     "employees": [
                                         {
                                             "emp_no": 110183,
@@ -58,7 +56,6 @@ describe("Test the worldql", () => {
                                 },
                                 {
                                     "from_date": "1992-03-20T23:00:00.000Z",
-                                    "emp_no": 110228,
                                     "employees": [
                                         {
                                             "emp_no": 110228,
@@ -73,7 +70,8 @@ describe("Test the worldql", () => {
                                 }
                             ]
                         }
-                    })
+                    }
+                )
             })
         })
     })
