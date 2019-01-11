@@ -2,7 +2,7 @@
   "name": "graphql-compose-mysql",
   "version": "0.0.1",
   "author": "Jean-Baptiste Roux",
-  "description": "Automagically generate a GraphQL schema from a MySQL database.",
+  "description": "Generates GraphQL types and resolvers from a MySQL database.",
   "main": "src/main.js",
   "keywords": [
     "graphql",
