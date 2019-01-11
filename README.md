@@ -11,7 +11,7 @@ As cherry on the cake, it will also:
 ## Installation
 
 ```bash
-npm install graphql graphql-compose graphql-compose-mysql
+yarn install graphql graphql-compose graphql-compose-mysql
 ```
 
 Modules `graphql` and `graphql-compose`, are located in `peerDependencies`, so they should be installed explicitly in your app. They have global objects and should not have ability to be installed as submodules.
