@@ -1,6 +1,6 @@
 # graphql-compose-mysql
 
-Automagically generate a GraphQL schema from a MySQL database.
+Generates GraphQL types and resolvers from a MySQL database.
 
 As cherry on the cake, it will also:
 * Create fields to make joins between tables (based on foreign keys detected)
