@@ -1,5 +1,5 @@
 const GraphQL = require("graphql")
-const { composeWithMysql } = require("../src/index")
+const { composeWithMysql } = require("../src/main")
 
 describe("Test the worldql", () => {
     jest.setTimeout(30000)
@@ -27,7 +27,7 @@ describe("Test the worldql", () => {
                   hire_date
                 }
             }`
-
+            
             return GraphQL.graphql({
                 schema: employeesSchema,
                 source: gqlQuery,

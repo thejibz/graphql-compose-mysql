@@ -1,9 +1,8 @@
 const debug = require("debug")("graphql-compose-mysql")
 const mysql = require("mysql")
 const mysqlUtilities = require("mysql-utilities")
-const { Resolver, SchemaComposer, getFlatProjectionFromAST, getProjectionFromAST, clearName } = require("graphql-compose")
+const { Resolver, SchemaComposer, getProjectionFromAST, clearName } = require("graphql-compose")
 const DataLoader = require('dataloader')
-const { printSchema } = require("graphql")
 const md5 = require('md5')
 
 
@@ -179,7 +178,7 @@ module.exports = (() => {
                 }
             }, {
                     /**
-                     * How to handle the cache ?
+                     * TODO: How to handle the cache ?
                      *  Should be "one query - one cache" 
                      *      but where to hook when a query end in order to clear the cache ?
                      *          the "info" object could be a way...
@@ -242,7 +241,7 @@ module.exports = (() => {
             const mysqlTablesNames = await _getMysqlTablesNames(mysqlConnection)
 
             return Promise.all(mysqlTablesNames.map(async mysqlTableName => {
-                // initialize the graphql type to build from the mysql table
+                // initialize the graphql type built from the mysql table
                 const gqlTC = schemaComposer.TypeComposer.create({
                     name: _clearNameForType(mysqlTableName),
                 })
