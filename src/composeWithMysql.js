@@ -1,3 +1,5 @@
+"use strict"
+
 const debug = require("debug")("graphql-compose-mysql")
 const mysql = require("mysql")
 const mysqlUtilities = require("mysql-utilities")
@@ -7,6 +9,8 @@ const md5 = require('md5')
 
 
 module.exports = (() => {
+    let PREFIX = ""
+
     const typeMap = { // TODO: Add spatial type ???
         bigint: "Int",
         binary: "String",
@@ -58,8 +62,12 @@ module.exports = (() => {
         year: "Int",
     }
 
+    const _clearName = (name) => {
+        return `${PREFIX}${clearName(name)}`
+    }
+
     const _clearNameForType = (name) => {
-        return clearName(name) + "T"
+        return `${_clearName(name)}T`
     }
 
     const _getMysqlTablesNames = (mysqlConnection) => {
@@ -118,7 +126,7 @@ module.exports = (() => {
 
         const fields = {}
         Object.keys(fieldsMap).forEach(field => {
-            const fieldName = clearName(fieldsMap[field].Field)
+            const fieldName = _clearName(fieldsMap[field].Field)
             fields[fieldName] = _mysqlTypeToGqlType(fieldsMap[field].Type)
         })
 
@@ -190,7 +198,7 @@ module.exports = (() => {
 
     const _buildResolverForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
         return new Resolver({
-            name: [clearName(mysqlTableName)],
+            name: [_clearName(mysqlTableName)],
             type: [gqlType],
             args: gqlType.getFields(),
             resolve: ({ source, args, context, info }) => {
@@ -202,16 +210,16 @@ module.exports = (() => {
                  * Use a namespace specific to the current mysqlConfig to avoid collisions in context 
                  */
                 const namespace = `gqlComposeMysql${md5(JSON.stringify(mysqlConfig))}`
-                ns = context[namespace] = !context[namespace] ? {} : context[namespace]
+                context[namespace] = !context[namespace] ? {} : context[namespace]
 
-                _addKnexInContext(ns, mysqlConfig)
+                _addKnexInContext(context[namespace], mysqlConfig)
 
                 const projection = _buildProjectionFromInfo(info)
                 const projectionHash = md5(JSON.stringify(projection))
-                const loaderName = `${clearName(mysqlTableName)}${projectionHash}`
-                _addDataLoaderForProjectionInContext(ns, loaderName, mysqlTableName, projection)
+                const loaderName = `${_clearName(mysqlTableName)}${projectionHash}`
+                _addDataLoaderForProjectionInContext(context[namespace], loaderName, mysqlTableName, projection)
 
-                return ns[loaderName].load(args)
+                return context[namespace][loaderName].load(args)
             }
         })
     }
@@ -227,6 +235,12 @@ module.exports = (() => {
                 throw new Error("You must provide a 'mysqlConfig' argument for the database.")
             }
 
+            if (!opts.prefix) {
+                opts.prefix = ""
+            }
+
+            PREFIX = Object.freeze(opts.prefix)
+
             // TODO optimize schema creation (use a pool instead of a single connection ?)
             const mysqlConnection = mysql.createConnection(opts.mysqlConfig)
 
@@ -239,7 +253,7 @@ module.exports = (() => {
             const schemaComposer = new SchemaComposer()
 
             const mysqlTablesNames = await _getMysqlTablesNames(mysqlConnection)
-
+            
             return Promise.all(mysqlTablesNames.map(async mysqlTableName => {
                 // initialize the graphql type built from the mysql table
                 const gqlTC = schemaComposer.TypeComposer.create({
@@ -269,18 +283,18 @@ module.exports = (() => {
                     foreignFields.forEach(foreignField => {
                         const localTC = schemaComposer.get(_clearNameForType(mysqlTableName))
 
-                        const foreignResolver = schemaComposer.Query.getField(clearName(foreignField.referencedTableName))
+                        const foreignResolver = schemaComposer.Query.getField(_clearName(foreignField.referencedTableName))
 
                         localTC.addRelation(
-                            clearName(foreignField.referencedTableName),
+                            _clearName(foreignField.referencedTableName),
                             {
                                 resolver: () => foreignResolver,
                                 prepareArgs: {
-                                    [clearName(foreignField.referencedColumnName)]: source => {
-                                        return source[clearName(foreignField.columnName)]
+                                    [_clearName(foreignField.referencedColumnName)]: source => {
+                                        return source[_clearName(foreignField.columnName)]
                                     },
                                 },
-                                projection: { [clearName(foreignField.columnName)]: true }
+                                projection: { [_clearName(foreignField.columnName)]: true }
                             }
                         )
                     })
