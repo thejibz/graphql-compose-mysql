@@ -9,7 +9,7 @@ describe("Test the worldql", () => {
             mysqlConfig: {
                 //debug: ['ComQueryPacket'],
                 //connectionLimit: 100,
-                //prefix: "emp_",
+                prefix: "emp_",
                 host: "localhost",
                 port: 3306,
                 user: "root",
