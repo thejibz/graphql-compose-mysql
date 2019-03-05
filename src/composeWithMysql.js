@@ -9,7 +9,6 @@ const md5 = require('md5')
 
 
 module.exports = (() => {
-    let PREFIX = ""
 
     const typeMap = { // TODO: Add spatial type ???
         bigint: "Int",
@@ -63,7 +62,7 @@ module.exports = (() => {
     }
 
     const _clearName = (name) => {
-        return `${PREFIX}${clearName(name)}`
+        return `${clearName(name)}`
     }
 
     const _clearNameForType = (name) => {
@@ -235,12 +234,6 @@ module.exports = (() => {
                 throw new Error("You must provide a 'mysqlConfig' argument for the database.")
             }
 
-            if (!opts.prefix) {
-                opts.prefix = ""
-            }
-
-            PREFIX = Object.freeze(opts.prefix)
-
             // TODO optimize schema creation (use a pool instead of a single connection ?)
             const mysqlConnection = mysql.createConnection(opts.mysqlConfig)
 
@@ -266,7 +259,7 @@ module.exports = (() => {
 
                 // add local resolver
                 const resolver = _buildResolverForGqlType(opts.mysqlConfig, mysqlTableName, gqlTC)
-                schemaComposer.Query.addFields({ [resolver.name]: resolver })
+                schemaComposer.Query.addNestedFields({ [`${_clearName(opts.mysqlConfig.database)}.${resolver.name}`]: resolver })
             })).then(_ => {
                 return Promise.all(mysqlTablesNames.map(async mysqlTableName => {
                     const foreignFields = await _getForeignFields(mysqlConnection, mysqlTableName)
@@ -283,7 +276,7 @@ module.exports = (() => {
                     foreignFields.forEach(foreignField => {
                         const localTC = schemaComposer.get(_clearNameForType(mysqlTableName))
 
-                        const foreignResolver = schemaComposer.Query.getField(_clearName(foreignField.referencedTableName))
+                        const foreignResolver = schemaComposer.Query.get(_clearName(opts.mysqlConfig.database)).getField(_clearName(foreignField.referencedTableName))
 
                         localTC.addRelation(
                             _clearName(foreignField.referencedTableName),

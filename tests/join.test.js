@@ -18,16 +18,18 @@ describe("Test the worldql", () => {
         }).then(employeesSchema => {
             const gqlQuery = `
             {
-                dept_manager(dept_no: "d003") {
-                    from_date
-                    employees {
-                      emp_no
-                      last_name
+                employees {
+                    dept_manager(dept_no: "d003") {
+                        from_date
+                        employees {
+                        emp_no
+                        last_name
+                        }
+                        departments {
+                        dept_name
+                        }
                     }
-                    departments {
-                      dept_name
-                    }
-                  }
+                }
             }`
 
             return GraphQL.graphql({
@@ -39,36 +41,38 @@ describe("Test the worldql", () => {
                 expect(gqlResponse).toMatchObject(
                     {
                         "data": {
-                            "dept_manager": [
-                                {
-                                    "from_date": "1984-12-31T23:00:00.000Z",
-                                    "employees": [
-                                        {
-                                            "emp_no": 110183,
-                                            "last_name": "Ossenbruggen"
-                                        }
-                                    ],
-                                    "departments": [
-                                        {
-                                            "dept_name": "Human Resources"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "from_date": "1992-03-20T23:00:00.000Z",
-                                    "employees": [
-                                        {
-                                            "emp_no": 110228,
-                                            "last_name": "Sigstam"
-                                        }
-                                    ],
-                                    "departments": [
-                                        {
-                                            "dept_name": "Human Resources"
-                                        }
-                                    ]
-                                }
-                            ]
+                            employees: {
+                                "dept_manager": [
+                                    {
+                                        "from_date": "1984-12-31T23:00:00.000Z",
+                                        "employees": [
+                                            {
+                                                "emp_no": 110183,
+                                                "last_name": "Ossenbruggen"
+                                            }
+                                        ],
+                                        "departments": [
+                                            {
+                                                "dept_name": "Human Resources"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "from_date": "1992-03-20T23:00:00.000Z",
+                                        "employees": [
+                                            {
+                                                "emp_no": 110228,
+                                                "last_name": "Sigstam"
+                                            }
+                                        ],
+                                        "departments": [
+                                            {
+                                                "dept_name": "Human Resources"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
                         }
                     }
                 )
