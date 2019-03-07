@@ -1,6 +1,6 @@
 {
   "name": "graphql-compose-mysql",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "author": "Jean-Baptiste Roux",
   "description": "Generates GraphQL types and resolvers from a MySQL database.",
   "main": "src/main.js",
@@ -14,13 +14,13 @@
     "debug": "^4.1.0",
     "jest": "^23.6.0",
     "nodemon": "^1.17.3",
-    "graphql": "^14.0.2"
+    "graphql": "^14.0.2",
+    "apollo-server": "^2.2.5"
   },
   "peerDependencies": {
     "graphql-compose": ">=5.3.4"
   },
   "dependencies": {
-    "apollo-server": "^2.2.5",
     "dataloader": "^1.4.0",
     "graphql-compose": "^5.3.4",
     "knex": "^0.16.2",
