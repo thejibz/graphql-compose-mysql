@@ -4,6 +4,9 @@
   "author": "Jean-Baptiste Roux",
   "description": "Generates GraphQL types and resolvers from a MySQL database.",
   "main": "src/main.js",
+  "files": [
+    "/src"
+  ],
   "keywords": [
     "graphql",
     "graphql-compose",
