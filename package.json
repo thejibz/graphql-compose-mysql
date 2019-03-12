@@ -1,6 +1,6 @@
 {
   "name": "graphql-compose-mysql",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": "Jean-Baptiste Roux",
   "description": "Generates GraphQL types and resolvers from a MySQL database.",
   "main": "src/main.js",
