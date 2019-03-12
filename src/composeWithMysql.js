@@ -62,12 +62,16 @@ module.exports = (() => {
         year: "Int",
     }
 
-    const _clearName = (name) => {
+    const _clearNameForField = (name) => {
+        return `${clearName(name)}`
+    }
+
+    const _clearNameForResolver = (name) => {
         return `${PREFIX}${clearName(name)}`
     }
 
     const _clearNameForType = (name) => {
-        return `${_clearName(name)}T`
+        return `${PREFIX}${clearName(name)}T`
     }
 
     const _getMysqlTablesNames = (mysqlConnection) => {
@@ -126,7 +130,7 @@ module.exports = (() => {
 
         const fields = {}
         Object.keys(fieldsMap).forEach(field => {
-            const fieldName = _clearName(fieldsMap[field].Field)
+            const fieldName = _clearNameForField(fieldsMap[field].Field)
             fields[fieldName] = _mysqlTypeToGqlType(fieldsMap[field].Type)
         })
 
@@ -198,7 +202,7 @@ module.exports = (() => {
 
     const _buildResolverForGqlType = (mysqlConfig, mysqlTableName, gqlType) => {
         return new Resolver({
-            name: [_clearName(mysqlTableName)],
+            name: [_clearNameForResolver(mysqlTableName)],
             type: [gqlType],
             args: gqlType.getFields(),
             resolve: ({ source, args, context, info }) => {
@@ -216,7 +220,7 @@ module.exports = (() => {
 
                 const projection = _buildProjectionFromInfo(info)
                 const projectionHash = md5(JSON.stringify(projection))
-                const loaderName = `${_clearName(mysqlTableName)}${projectionHash}`
+                const loaderName = `${_clearNameForResolver(mysqlTableName)}${projectionHash}`
                 _addDataLoaderForProjectionInContext(context[namespace], loaderName, mysqlTableName, projection)
 
                 return context[namespace][loaderName].load(args)
@@ -283,18 +287,18 @@ module.exports = (() => {
                     foreignFields.forEach(foreignField => {
                         const localTC = schemaComposer.get(_clearNameForType(mysqlTableName))
 
-                        const foreignResolver = schemaComposer.Query.getField(_clearName(foreignField.referencedTableName))
+                        const foreignResolver = schemaComposer.Query.getField(_clearNameForResolver(foreignField.referencedTableName))
 
                         localTC.addRelation(
-                            _clearName(foreignField.referencedTableName),
+                            _clearNameForField(foreignField.referencedTableName),
                             {
                                 resolver: () => foreignResolver,
                                 prepareArgs: {
-                                    [_clearName(foreignField.referencedColumnName)]: source => {
-                                        return source[_clearName(foreignField.columnName)]
+                                    [_clearNameForField(foreignField.referencedColumnName)]: source => {
+                                        return source[_clearNameForField(foreignField.columnName)]
                                     },
                                 },
-                                projection: { [_clearName(foreignField.columnName)]: true }
+                                projection: { [_clearNameForField(foreignField.columnName)]: true }
                             }
                         )
                     })
