@@ -1,7 +1,7 @@
 const GraphQL = require("graphql")
 const { composeWithMysql } = require("../src/main")
 
-describe("Test the worldql", () => {
+describe("Basic test", () => {
     jest.setTimeout(30000)
 
      test("get all fields for employee n°10001", () => {

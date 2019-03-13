@@ -2,7 +2,7 @@ const debug = require("debug")("graphql-compose-mysql")
 const GraphQL = require("graphql")
 const { composeWithMysql } = require("../src/main")
 
-describe("Test the worldql", () => {
+describe("Join test", () => {
     jest.setTimeout(30000)
 
     test("get dept_manager with join on employees and departments", () => {

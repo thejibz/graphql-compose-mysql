@@ -169,10 +169,19 @@ module.exports = (() => {
                     const selects = []
                     const bindings = []
 
-                    argsList.map(args => {
-                        const statements = ns.knex(mysqlTableName)
+                    argsList.map(_args => {
+                        const limit = _args._limit
+                        let { _limit, ...args } = _args
+
+                        let statements = ns.knex(mysqlTableName)
                             .select(_buildSelectArgs(projection))
-                            .where(args).toSQL().toNative()
+                            .where(args)
+
+                        if (!!limit) {
+                            statements.limit(limit)
+                        }
+
+                        statements = statements.toSQL().toNative()
 
                         selects.push(statements.sql)
                         bindings.push(statements.bindings)
@@ -183,10 +192,18 @@ module.exports = (() => {
                         .then(rows => rows[0])
 
                 } else { // argList == 1
-                    return ns.knex(mysqlTableName)
+                    const limit = argsList[0]._limit
+                    let { _limit, ...args } = argsList[0]
+
+                    let statement = ns.knex(mysqlTableName)
                         .select(_buildSelectArgs(projection))
-                        .where(argsList[0])
-                        .then(rows => [rows])
+                        .where(args)
+
+                    if (!!limit) {
+                        statement.limit(limit)
+                    }
+
+                    return statement.then(rows => [rows])
                 }
             }, {
                     /**
@@ -204,10 +221,10 @@ module.exports = (() => {
         return new Resolver({
             name: [_clearNameForResolver(mysqlTableName)],
             type: [gqlType],
-            args: gqlType.getFields(),
+            args: Object.assign({ _limit: "Int" }, gqlType.getFields()),
             resolve: ({ source, args, context, info }) => {
                 if (!context) {
-                    throw new Error("You must provide a GraphQL context, even if empty (e.g. contextValue: {})")
+                    throw new Error("You must provide a GraphQL context to the server, even if empty (e.g. contextValue: {})")
                 }
 
                 /**
@@ -257,7 +274,7 @@ module.exports = (() => {
             const schemaComposer = new SchemaComposer()
 
             const mysqlTablesNames = await _getMysqlTablesNames(mysqlConnection)
-            
+
             return Promise.all(mysqlTablesNames.map(async mysqlTableName => {
                 // initialize the graphql type built from the mysql table
                 const gqlTC = schemaComposer.TypeComposer.create({
