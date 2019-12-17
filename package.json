@@ -26,7 +26,7 @@
   "dependencies": {
     "dataloader": "^1.4.0",
     "graphql-compose": "^5.3.4",
-    "knex": "^0.16.2",
+    "knex": "0.19.5",
     "lodash": "^4.17.10",
     "md5": "^2.2.1",
     "mysql": "^2.16.0",
