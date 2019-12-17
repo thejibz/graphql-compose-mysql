@@ -15,10 +15,11 @@
   "license": "MIT",
   "devDependencies": {
     "debug": "^4.1.0",
-    "jest": "^23.6.0",
+    "jest": "24.9",
     "nodemon": "^1.17.3",
     "graphql": "^14.0.2",
-    "apollo-server": "^2.2.5"
+    "apollo-server": "^2.2.5",
+    "cross-env": "5.2.0"
   },
   "peerDependencies": {
     "graphql-compose": ">=5.3.4"
@@ -39,8 +40,8 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "test": "DEBUG_DEPTH=15 DEBUG='graphql-compose-mysql' jest --forceExit --detectOpenHandles",
-    "playground": "DEBUG='graphql-compose-mysql' node ./src/__playground__.js",
+    "test": "cross-env DEBUG_DEPTH=15 DEBUG='graphql-compose-mysql' jest --forceExit --detectOpenHandles",
+    "playground": "cross-env DEBUG='graphql-compose-mysql' node ./src/__playground__.js",
     "start": "node ./src/index.js"
   }
 }
