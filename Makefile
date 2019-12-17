@@ -10,12 +10,12 @@ test:
 playground:
 	yarn playground
 
-push:
+gitlab:
 	$(MAKE) test
 	git add .
 	git status
 	git commit -m"[sync]"|| true 
-	git push
+	git push origin master
 
 github:
 	$(MAKE) test
@@ -23,4 +23,8 @@ github:
 	git status
 	git commit -m"[sync]"|| true 
 	git push github master
-	
+
+publish:
+	$(MAKE) gitlab
+	$(MAKE) github
+	npm publish
